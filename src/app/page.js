@@ -7,11 +7,23 @@ import { useEffect } from 'react';
 import { courses, packages } from '@/data/courses';
 import CourseCard from '@/components/CourseCard/CourseCard';
 
+import { useQuery } from '@tanstack/react-query';
+import { getUserEnrollments } from '@/queries/course-queries';
+
 export default function LandingPage() {
-  const { user, loading, buyPackage } = useAuth();
+  const { user, loading: authLoading, buyPackage } = useAuth();
   const router = useRouter();
 
-  if (loading) return null;
+  // Fetch Enrollments from DB
+  const { data: enrollments, isLoading: enrollmentsLoading } = useQuery({
+    queryKey: ['userEnrollments', user?.id],
+    queryFn: () => getUserEnrollments(user?.id),
+    enabled: !!user?.id,
+  });
+
+  if (authLoading || enrollmentsLoading) return null;
+
+  const enrolledCourseIds = enrollments?.map(e => e.courseId) || [];
 
   return (
     <div className="min-h-screen bg-white font-Segoe overflow-x-hidden">
@@ -84,7 +96,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {courses.map((course) => (
-              <CourseCard key={course.id} {...course} isEnrolled={false} />
+              <CourseCard key={course.id} {...course} isEnrolled={enrolledCourseIds.includes(course.id)} />
             ))}
           </div>
         </div>

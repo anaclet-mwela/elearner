@@ -1,18 +1,36 @@
-'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/translations';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { markLessonComplete } from '@/actions/course-actions';
+import { useAuth } from '@/contexts/AuthContext';
+import CertificateModal from '@/components/CertificateModal/CertificateModal';
 
-export default function LessonPlayer({ course, lesson, children, onBackToCourse }) {
-    const { settings, updateSettings, completeLesson, displayLanguage, narrationLanguage, narratorVoice, isVoiceOverEnabled } = useSettings();
+export default function LessonPlayer({ course, lesson, children, onBackToCourse, progress: courseProgress }) {
+    const { settings, updateSettings, completeLesson: legacyCompleteLesson, displayLanguage, narrationLanguage, narratorVoice, isVoiceOverEnabled } = useSettings();
     const { t } = useTranslation(displayLanguage);
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
 
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [feedback, setFeedback] = useState(null);
     const [isCompleted, setIsCompleted] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [showCertificate, setShowCertificate] = useState(false);
 
+    // Progress Mutation
+    const progressMutation = useMutation({
+        mutationFn: () => markLessonComplete(course.id, lesson.lessonId),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['progress', user?.id, course.id] });
+            // Also call legacy for backward compatibility if needed
+            legacyCompleteLesson(lesson.id);
+
+            if (data?.isFinished) {
+                setShowCertificate(true);
+            }
+        }
+    });
     // Quiz State
     const [quizState, setQuizState] = useState({
         currentQuestionIndex: 0,
@@ -96,7 +114,7 @@ export default function LessonPlayer({ course, lesson, children, onBackToCourse 
             }));
         } else {
             setQuizState(prev => ({ ...prev, showResults: true }));
-            completeLesson(lesson.id);
+            progressMutation.mutate();
         }
     };
 
@@ -111,6 +129,7 @@ export default function LessonPlayer({ course, lesson, children, onBackToCourse 
             setCurrentStepIndex(currentStepIndex + 1);
         } else {
             setIsCompleted(true);
+            progressMutation.mutate();
         }
     };
 
@@ -554,6 +573,18 @@ export default function LessonPlayer({ course, lesson, children, onBackToCourse 
                     }) : children}
                 </div>
             </main>
+
+            {showCertificate && (
+                <CertificateModal
+                    course={course}
+                    user={user}
+                    date={new Date()}
+                    onClose={() => {
+                        setShowCertificate(false);
+                        onBackToCourse();
+                    }}
+                />
+            )}
         </div>
     );
 }

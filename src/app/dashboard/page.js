@@ -11,6 +11,9 @@ import { useTranslation } from '@/i18n/translations';
 import Settings from '@/components/Settings/Settings';
 import { UserButton } from '@clerk/nextjs';
 
+import { useQuery } from '@tanstack/react-query';
+import { getUserEnrollments } from '@/queries/course-queries';
+
 export default function Dashboard() {
     const [showSettings, setShowSettings] = useState(false);
     const { displayLanguage } = useSettings();
@@ -18,13 +21,20 @@ export default function Dashboard() {
     const { t } = useTranslation(displayLanguage);
     const router = useRouter();
 
+    // Fetch Enrollments from DB
+    const { data: enrollments, isLoading: enrollmentsLoading } = useQuery({
+        queryKey: ['userEnrollments', user?.id],
+        queryFn: () => getUserEnrollments(user?.id),
+        enabled: !!user?.id,
+    });
+
     useEffect(() => {
         if (!loading && !user) {
             router.push('/login');
         }
     }, [user, loading, router]);
 
-    if (loading || !user) {
+    if (loading || !user || enrollmentsLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
@@ -32,8 +42,9 @@ export default function Dashboard() {
         );
     }
 
-    const purchasedCourses = courses.filter(c => user.purchasedCourses.includes(c.id));
-    const otherCourses = courses.filter(c => !user.purchasedCourses.includes(c.id));
+    const enrolledCourseIds = enrollments?.map(e => e.courseId) || [];
+    const purchasedCourses = courses.filter(c => enrolledCourseIds.includes(c.id));
+    const otherCourses = courses.filter(c => !enrolledCourseIds.includes(c.id));
 
     return (
         <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">

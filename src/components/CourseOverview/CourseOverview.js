@@ -4,9 +4,14 @@ import { useState } from 'react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/translations';
 
-export default function CourseOverview({ course, onSelectLesson }) {
-    const { displayLanguage, completedLessons } = useSettings();
+export default function CourseOverview({ course, onSelectLesson, progress }) {
+    const { displayLanguage } = useSettings();
     const { t } = useTranslation(displayLanguage);
+
+    const totalLessons = progress?.totalLessons || course.lessons?.length || 0;
+    const completedCount = progress?.completedCount || 0;
+    const progressPercentage = progress?.percentage || 0;
+    const completedLessonIds = progress?.completedLessons || [];
 
     // Helper to get localized content
     const getLocalizedContent = (content) => {
@@ -15,11 +20,6 @@ export default function CourseOverview({ course, onSelectLesson }) {
         }
         return content;
     };
-
-    const totalLessons = course.lessons?.length || 0;
-    // Count lessons in this course that are completed
-    const completedCount = course.lessons?.filter(l => completedLessons.includes(l.id)).length || 0;
-    const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
     const handleLessonClick = (lesson, isLocked) => {
         if (!isLocked) {
@@ -62,12 +62,12 @@ export default function CourseOverview({ course, onSelectLesson }) {
                             <span className="font-bold text-slate-700 uppercase tracking-wider text-sm">
                                 {t('course.yourProgress')}
                             </span>
-                            <span className="font-bold text-blue-600">{progress}%</span>
+                            <span className="font-bold text-blue-600">{progressPercentage}%</span>
                         </div>
                         <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-blue-600 rounded-full transition-all duration-1000 ease-out"
-                                style={{ width: `${progress}%` }}
+                                style={{ width: `${progressPercentage}%` }}
                             />
                         </div>
                     </div>
@@ -85,9 +85,9 @@ export default function CourseOverview({ course, onSelectLesson }) {
                     {course.lessons && course.lessons.length > 0 ? (
                         <div className="space-y-4">
                             {course.lessons.map((lesson, index) => {
-                                const isCompleted = completedLessons.includes(lesson.id);
+                                const isCompleted = completedLessonIds.includes(lesson.lessonId);
                                 // Locked if previous lesson not completed (skip for first lesson)
-                                const isLocked = index > 0 && !completedLessons.includes(course.lessons[index - 1].id);
+                                const isLocked = index > 0 && !completedLessonIds.includes(course.lessons[index - 1].lessonId);
                                 const isCurrent = !isLocked && !isCompleted;
 
                                 return (

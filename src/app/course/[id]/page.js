@@ -1,10 +1,10 @@
-import { courses } from '@/data/courses';
 import { notFound } from 'next/navigation';
 import CourseContent from './CourseContent';
+import { getCourseById } from '@/queries/course-queries';
 
 export default async function CoursePage({ params }) {
     const { id } = await params;
-    const course = courses.find(c => c.id === id);
+    const course = await getCourseById(id);
 
     if (!course) {
         notFound();

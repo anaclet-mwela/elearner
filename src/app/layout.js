@@ -2,6 +2,7 @@ import "./globals.css";
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ClerkProvider } from '@clerk/nextjs';
+import QueryProvider from '@/providers/QueryProvider';
 
 export const metadata = {
   title: "WinTutor - Learn Computer Skills",
@@ -13,11 +14,13 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <body className="antialiased">
-          <AuthProvider>
-            <SettingsProvider>
-              {children}
-            </SettingsProvider>
-          </AuthProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <SettingsProvider>
+                {children}
+              </SettingsProvider>
+            </AuthProvider>
+          </QueryProvider>
         </body>
       </html>
     </ClerkProvider>
