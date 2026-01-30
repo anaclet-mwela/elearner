@@ -1,11 +1,20 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
+const isPublicRoute = createRouteMatcher([
+    '/api/webhook',
+]);
+
 const isProtectedRoute = createRouteMatcher([
     '/dashboard(.*)',
     '/course/(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+    // Allow webhook route to bypass authentication
+    if (isPublicRoute(req)) {
+        return;
+    }
+
     if (isProtectedRoute(req)) {
         // In Clerk v6, the auth object is passed directly to the middleware.
         await auth.protect();
