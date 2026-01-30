@@ -19,7 +19,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="text-2xl font-black tracking-tight cursor-default">
-            Win<span className="text-blue-600">Tutor</span>
+            e<span className="text-blue-600">Learner</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-600 uppercase tracking-widest">
